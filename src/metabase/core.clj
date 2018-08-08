@@ -27,6 +27,7 @@
             [ring.adapter.jetty :as ring-jetty]
             [ring.middleware
              [cookies :refer [wrap-cookies]]
+             [cors :refer [wrap-cors]]
              [gzip :refer [wrap-gzip]]
              [json :refer [wrap-json-body]]
              [keyword-params :refer [wrap-keyword-params]]
@@ -103,6 +104,11 @@
       mb-middleware/wrap-session-id      ; looks for a Metabase Session ID and assoc as :metabase-session-id
       mb-middleware/maybe-set-site-url   ; set the value of `site-url` if it hasn't been set yet
       locale-negotiator                  ; Binds *locale* for i18n
+      (#(if-let [allowed-hosts (config/config-str :mb-cors-allowed-hosts)]
+          (wrap-cors %                   ; Enable CORS if configured
+            :access-control-allow-origin [(re-pattern allowed-hosts)]
+            :access-control-allow-methods [:get :put :post :delete])
+          %))
       wrap-cookies                       ; Parses cookies in the request map and assocs as :cookies
       wrap-session                       ; reads in current HTTP session and sets :session/key
       wrap-gzip))                        ; GZIP response if client can handle it
